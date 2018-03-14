@@ -1,5 +1,15 @@
 #!/bin/bash
 
+displayFolderPermissionsIfExist() {
+  local folder=${1}
+
+  if [ -e "${folder}" ]; then
+    ls -dl "${folder}"
+  else
+    echo "No such folder: ${folder}"
+  fi
+}
+
 readonly ZIP_FILE=${1}
 
 if [ ! -e "${ZIP_FILE}" ]; then
@@ -15,9 +25,23 @@ if [ -e "${ZIP_FILE}" ] ; then
   echo 'Done.'
 fi
 
+echo "jar should be rw-r--r--:"
 ls -l ${WORKDIR}/*/jboss-modules.jar
-ls -l ${WORKDIR}/*/domain/  -d
-readonly JARS_FILE_MASK='-rw-rw-r--'
+echo '===================================================='
+
+echo "following folders should be drwxr-x--x:"
+displayFolderPermissionsIfExist ${WORKDIR}/*/domain/
+displayFolderPermissionsIfExist ${WORKDIR}/*/migration
+displayFolderPermissionsIfExist ${WORKDIR}/*/bin
+displayFolderPermissionsIfExist ${WORKDIR}/*/docs/examples
+displayFolderPermissionsIfExist ${WORKDIR}/*/bin/client
+echo '===================================================='
+
+echo "following folders should be drwxrwx--x:"
+displayFolderPermissionsIfExist ${WORKDIR}/*/domain/tmp
+displayFolderPermissionsIfExist ${WORKDIR}/*/standalone/tmp
+echo '===================================================='
+readonly JARS_FILE_MASK='-rw-r--r--'
 if [ -z "${NO_JAR}" ]; then
   echo -n "Looking for jars with priviliges different from ${JARS_FILE_MASK} ... "
   for jar in $(find ${WORKDIR}/*/modules/ -name *.jar)
@@ -25,4 +49,5 @@ if [ -z "${NO_JAR}" ]; then
     ls -l "${jar}"
   done | sed -e "/${JARS_FILE_MASK}/d"
 fi
+rm -rf "${WORKDIR}"
 echo 'Done.'
